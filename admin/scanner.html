@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner QR - Control de Eventos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-purple-600">Control de Eventos</h1>
+                    </div>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="dashboard.html" class="text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="#" class="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-purple-500 text-sm font-medium">
+                            Escanear QR
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button id="logout" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Scanner Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-qrcode text-purple-600 mr-2"></i>Escáner QR
+                </h2>
+                <div id="reader" class="w-full"></div>
+                <div class="mt-4">
+                    <button id="startButton" class="bg-purple-600 text-white rounded px-4 py-2 hover:bg-purple-700 transition duration-200">
+                        <i class="fas fa-camera mr-2"></i>Iniciar Escáner
+                    </button>
+                    <button id="stopButton" class="bg-gray-500 text-white rounded px-4 py-2 hover:bg-gray-600 transition duration-200 ml-2 hidden">
+                        <i class="fas fa-stop mr-2"></i>Detener Escáner
+                    </button>
+                </div>
+            </div>
+
+            <!-- Guest Information Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-user text-purple-600 mr-2"></i>Información del Invitado
+                </h2>
+                <div id="guestInfo" class="hidden">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Nombre</p>
+                                <p id="guestName" class="font-semibold"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Tipo de Entrada</p>
+                                <p id="ticketType" class="font-semibold"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Email</p>
+                                <p id="guestEmail" class="font-semibold"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Estado</p>
+                                <p id="guestStatus" class="font-semibold"></p>
+                            </div>
+                        </div>
+
+                        <div id="giftSection" class="hidden mt-4">
+                            <div class="border-t pt-4">
+                                <label class="block text-sm font-medium text-gray-700">Registro de Regalo</label>
+                                <div class="mt-2 flex">
+                                    <input type="text" id="giftInput" class="flex-1 rounded-l border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50" placeholder="Descripción del regalo">
+                                    <button onclick="registerGift()" class="bg-purple-600 text-white rounded-r px-4 py-2 hover:bg-purple-700">
+                                        Registrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button onclick="confirmEntry()" class="w-full bg-green-600 text-white rounded px-4 py-2 hover:bg-green-700 transition duration-200">
+                                <i class="fas fa-check-circle mr-2"></i>Confirmar Entrada
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="noGuestInfo" class="text-center py-8">
+                    <i class="fas fa-user-slash text-gray-400 text-4xl mb-4"></i>
+                    <p class="text-gray-500">Escanee un código QR para ver la información del invitado</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div id="alertIcon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                    <i class="fas fa-check text-green-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4" id="alertTitle"></h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500" id="alertMessage"></p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="alertOkButton" class="px-4 py-2 bg-purple-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrcodeScanner = null;
+        let currentGuestId = null;
+
+        // Inicializar escáner
+        function initializeScanner() {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            document.getElementById('startButton').addEventListener('click', startScanning);
+            document.getElementById('stopButton').addEventListener('click', stopScanning);
+        }
+
+        // Iniciar escaneo
+        function startScanning() {
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanError
+            )
+            .then(() => {
+                document.getElementById('startButton').classList.add('hidden');
+                document.getElementById('stopButton').classList.remove('hidden');
+            })
+            .catch((err) => {
+                showAlert('Error', 'No se pudo iniciar la cámara: ' + err, 'error');
+            });
+        }
+
+        // Detener escaneo
+        function stopScanning() {
+            html5QrcodeScanner.stop()
+            .then(() => {
+                document.getElementById('startButton').classList.remove('hidden');
+                document.getElementById('stopButton').classList.add('hidden');
+            });
+        }
+
+        // Manejo de escaneo exitoso
+        async function onScanSuccess(decodedText) {
+            try {
+                const response = await fetch(`/api/guests/${decodedText}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Invitado no encontrado');
+                
+                const guest = await response.json();
+                displayGuestInfo(guest);
+                stopScanning();
+            } catch (error) {
+                showAlert('Error', error.message, 'error');
+            }
+        }
+
+        function onScanError(error) {
+            console.warn(`Code scan error = ${error}`);
+        }
+
+        // Mostrar información del invitado
+        function displayGuestInfo(guest) {
+            currentGuestId = guest.id;
+            document.getElementById('guestInfo').classList.remove('hidden');
+            document.getElementById('noGuestInfo').classList.add('hidden');
+            
+            document.getElementById('guestName').textContent = guest.name;
+            document.getElementById('guestEmail').textContent = guest.email;
+            document.getElementById('ticketType').textContent = guest.ticketType;
+            document.getElementById('guestStatus').textContent = guest.status || 'Pendiente';
+
+            // Mostrar sección de regalo si es tipo invitación
+            const giftSection = document.getElementById('giftSection');
+            if (guest.ticketType === 'invitacion' && !guest.gift) {
+                giftSection.classList.remove('hidden');
+            } else {
+                giftSection.classList.add('hidden');
+            }
+        }
+
+        // Registrar regalo
+        async function registerGift() {
+            const giftDescription = document.getElementById('giftInput').value;
+            if (!giftDescription) {
+                showAlert('Error', 'Por favor ingrese una descripción del regalo', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/guests/${currentGuestId}/gift`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ gift: giftDescription })
+                });
+
+                if (!response.ok) throw new Error('Error al registrar el regalo');
+                
+                document.getElementById('giftSection').classList.add('hidden');
+                showAlert('Éxito', 'Regalo registrado correctamente', 'success');
+            } catch (error) {
+                showAlert('Error', error.message, 'error');
+            }
+        }
+
+        // Confirmar entrada
+        async function confirmEntry() {
+            try {
+                const response = await fetch(`/api/guests/${currentGuestId}/entry`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error al confirmar la entrada');
+                
+                showAlert('Éxito', 'Entrada confirmada correctamente', 'success');
+                resetGuestInfo();
+            } catch (error) {
+                showAlert('Error', error.message, 'error');
+            }
+        }
+
+        // Resetear información del invitado
+        function resetGuestInfo() {
+            currentGuestId = null;
+            document.getElementById('guestInfo').classList.add('hidden');
+            document.getElementById('noGuestInfo').classList.remove('hidden');
+            document.getElementById('giftInput').value = '';
+        }
+
+        // Mostrar alerta
+        function showAlert(title, message, type) {
+            const modal = document.getElementById('alertModal');
+            const iconDiv = document.getElementById('alertIcon');
+            const icon = iconDiv.querySelector('i');
+
+            document.getElementById('alertTitle').textContent = title;
+            document.getElementById('alertMessage').textContent = message;
+
+            if (type === 'error') {
+                iconDiv.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100';
+                icon.className = 'fas fa-times text-red-600 text-xl';
+            } else {
+                iconDiv.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100';
+                icon.className = 'fas fa-check text-green-600 text-xl';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // Cerrar alerta
+        document.getElementById('alertOkButton').addEventListener('click', () => {
+            document.getElementById('alertModal').classList.add('hidden');
+        });
+
+        // Cerrar sesión
+        document.getElementById('logout').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = '/index.html';
+        });
+
+        // Inicializar al cargar la página
+        window.addEventListener('load', initializeScanner);
+    </script>
+</body>
+</html>
