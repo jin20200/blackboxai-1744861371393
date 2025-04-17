@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: 'Event Manager Dashboards'
+    orgId: 1
+    folder: 'Event Manager'
+    folderUid: 'event-manager'
+    type: file
+    disableDeletion: true
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: true
