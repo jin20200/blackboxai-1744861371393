@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # Backend API service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: event-manager-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongodb:27017/event-manager
+      - JWT_SECRET=your-secret-key-change-in-production
+      - PORT=3000
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - mongodb
+    networks:
+      - event-manager-network
+    command: npm run dev
+    restart: unless-stopped
+
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    container_name: event-manager-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - event-manager-network
+    restart: unless-stopped
+
+  # MongoDB Express service (optional, for database management)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: event-manager-mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongodb
+    networks:
+      - event-manager-network
+    restart: unless-stopped
+
+# Volumes
+volumes:
+  mongodb_data:
+    name: event-manager-mongodb-data
+
+# Networks
+networks:
+  event-manager-network:
+    name: event-manager-network
+    driver: bridge
+
+# Usage instructions:
+# 1. Build and start all services:
+#    docker-compose up -d
+#
+# 2. View logs:
+#    docker-compose logs -f
+#
+# 3. Stop all services:
+#    docker-compose down
+#
+# 4. Remove volumes (careful, this deletes all data):
+#    docker-compose down -v
+#
+# Access points:
+# - API: http://localhost:3000
+# - MongoDB: mongodb://localhost:27017
+# - Mongo Express (DB Management): http://localhost:8081
+#   Username: admin
+#   Password: admin123
+#
+# Development:
+# - The API service uses nodemon for auto-reload
+# - Source code changes in ./backend are reflected immediately
+# - MongoDB data persists across container restarts
