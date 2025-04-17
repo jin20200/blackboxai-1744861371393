@@ -1,0 +1,126 @@
+groups:
+  - name: event-manager-alerts
+    rules:
+      # API Health
+      - alert: APIHighResponseTime
+        expr: http_request_duration_seconds{job="event-manager-api"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "API response time is above 2 seconds for 5 minutes"
+
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API error rate"
+          description: "Error rate is above 5% for 5 minutes"
+
+      # Node Resources
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80% for 5 minutes"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85% for 5 minutes"
+
+      - alert: LowDiskSpace
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% for 5 minutes"
+
+      # MongoDB
+      - alert: MongoDBDown
+        expr: mongodb_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB instance has been down for more than 1 minute"
+
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections{state="current"} > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High MongoDB connections"
+          description: "MongoDB has more than 500 connections for 5 minutes"
+
+      # Nginx
+      - alert: NginxHighErrorRate
+        expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) / rate(nginx_http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Nginx error rate"
+          description: "Nginx error rate is above 5% for 5 minutes"
+
+      # Application Specific
+      - alert: HighGuestEntryRate
+        expr: rate(guest_entries_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High guest entry rate"
+          description: "More than 10 guests per minute are entering for 5 minutes"
+
+      - alert: UnusualGiftRegistrationRate
+        expr: rate(gift_registrations_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "High gift registration rate"
+          description: "More than 5 gifts per minute are being registered for 5 minutes"
+
+      # Security
+      - alert: HighLoginFailureRate
+        expr: rate(login_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High login failure rate"
+          description: "More than 10 login failures per minute for 5 minutes"
+
+      - alert: UnusualAccessPatterns
+        expr: rate(http_requests_total{status="403"}[5m]) > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual access patterns detected"
+          description: "High rate of forbidden requests detected"
+
+      # Backup
+      - alert: BackupFailure
+        expr: backup_success_timestamp < (time() - 86400)
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup failure detected"
+          description: "No successful backup has been completed in the last 24 hours"
